@@ -1,0 +1,160 @@
+#include <stdio.h>
+#include <math.h>
+#include <gmp.h>
+#include <mpi.h>
+
+
+
+int previous(int current){
+
+	int j = current;
+	int k;
+	j--;
+	//printf("%d\n", j);
+	mpz_t l;
+	mpz_init_set_ui(l, j);
+
+	while(mpz_probab_prime_p(l, k)==0){
+		j--;
+		mpz_init_set_ui(l, j);
+	}
+
+	//printf("the previous prime is:		%d\n", j);
+	mpz_clear(l);
+	return j;
+
+}
+
+int itterate(int primary, int pivot, int target){
+
+	//int k;
+	//j--;
+	//printf("%d\n", j);
+
+	//printf("trying pivot	%d\n", pivot);
+
+	while(primary*pivot!=target){
+		//printf("trying pivot	%d\n", pivot);
+		pivot = previous(pivot);
+
+		if (pivot*primary < target) return 0;
+
+	}
+
+
+
+	return pivot;
+
+
+
+
+
+}
+
+
+int setup(int primary, int rank, int count){
+
+	double temp = (double) primary;
+	int temp2;
+	int temp4;
+	int j;
+
+	mpz_t i; 
+
+	int out = (int) sqrt(temp);
+
+	mpz_init_set_ui(i , out);
+
+	for(j=-1;j<rank; j++) mpz_nextprime(i, i);
+
+	out = mpz_get_ui(i);
+
+	temp2 = out*out;
+
+	if (temp2==primary){
+			printf("Prime factor 	1: %d\n", temp2);
+			printf("Prime factor 	2: %d\n", temp2);
+			printf("Equals the target: %d\n", primary);
+			MPI_Abort(MPI_COMM_WORLD, 1);
+			return 0;
+
+	}
+
+	int temp3 = previous(out);
+
+
+	//printf("the current prime is:		%d\n", out);
+
+
+
+	//getchar();
+
+	while (temp2!=primary){
+
+		//printf("the current prime is:		%d\n", out);
+
+		//getchar();
+
+		temp4 = itterate(out, temp3, primary);
+
+		temp2 = out*temp4;
+		if(temp2!=0) {
+			printf("Prime factor 	1: %d\n", out);
+			printf("Prime factor 	2: %d\n", temp4);
+
+			out = temp2;
+
+			printf("Equals the target: %d\n", out);
+
+
+			MPI_Abort(MPI_COMM_WORLD, 1);
+
+
+		}
+		else {
+				//out++;
+				mpz_init_set_ui(i , out);
+
+				for (j=0; j<count; j++)mpz_nextprime(i, i);
+				out = mpz_get_ui(i);
+				//printf("trying primary 	%d\n", out);
+
+		};
+
+	}
+
+
+
+
+
+	//out = previous(out);
+
+	mpz_clear(i);
+
+	//return out;
+	return 0;
+
+
+
+}
+
+
+
+int main(int argc, char *argv[]){
+
+	MPI_Init(&argc, &argv);
+
+	int processes, rank;
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &processes);
+    MPI_Status status;
+	
+	//printf("the prime is:			%i\n", setup(atoi(argv[1])));
+
+	setup(atoi(argv[1]), rank, processes);
+
+	MPI_Finalize();
+	return 0;
+
+}

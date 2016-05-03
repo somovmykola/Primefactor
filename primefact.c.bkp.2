@@ -1,0 +1,195 @@
+#include <stdio.h>
+#include <math.h>
+#include <gmp.h>
+#include <mpi.h>
+#include <time.h>
+#include <string.h>
+
+
+
+long long int previous(long long int current){
+
+	long long int j = current;
+	long long int k;
+	j--;
+	
+	mpz_t l;
+	mpz_init_set_ui(l, j);
+
+	while(mpz_probab_prime_p(l, k)==0){
+		j--;
+		mpz_init_set_ui(l, j);
+	}
+
+
+	mpz_clear(l);
+	return j;
+
+}
+
+long long int itterate(long long int primary, long long int pivot, long long int target){
+
+
+
+	while(primary*pivot!=target){
+		
+		pivot = previous(pivot);
+
+		if (pivot*primary < target) return 0;
+
+	}
+
+
+
+	return pivot;
+
+
+
+
+
+}
+
+
+int setup(long long int primary, int rank, int count){
+
+	double temp = (double) primary;
+	long long int temp2;
+	long long int temp4;
+	int j;
+	clock_t start, end, execution;
+	double comp;
+
+
+
+	start = clock();
+
+
+
+	mpz_t i; 
+
+
+	long long int out = primary;
+
+	mpz_init_set_ui(i , out);
+
+	mpz_sqrt(i,i);
+
+
+
+	char* s;
+
+
+
+	for(j=-1;j<rank; j++) mpz_nextprime(i, i);
+
+	out = mpz_get_ui(i);
+
+	temp2 = out*out;
+
+	if (temp2==primary){
+			printf("\n\n*****************************************************\n\n");
+
+			printf("Prime factor 	1: %lli\n", temp2);
+			printf("Prime factor 	2: %lli\n", temp2);
+			printf("Equals the target: %lli\n", primary);
+
+
+			printf("\n\n*****************************************************\n\n");
+
+
+			end = clock();
+
+
+			start = end-start;
+
+
+			 
+
+
+			MPI_Abort(MPI_COMM_WORLD, 1);
+			return 0;
+
+	}
+
+	long long int temp3 = previous(out);
+
+
+
+	while (temp2!=primary){
+
+
+
+		temp4 = itterate(out, temp3, primary);
+
+		temp2 = out*temp4;
+		if(temp2!=0) {
+			printf("\n\n*****************************************************\n\n");
+			printf("Prime factor 	1: %lli\n", out);
+			printf("Prime factor 	2: %lli\n", temp4);
+
+
+			out = temp2;
+
+			printf("Equals the target: %lli\n", out);
+
+			printf("\n\n*****************************************************\n\n");
+			printf("EXECUTION TIME WAS:    %d", execution);
+
+
+
+
+
+			MPI_Abort(MPI_COMM_WORLD, 1);
+
+
+		}
+		else {
+				//out++;
+				mpz_init_set_ui(i , out);
+
+				for (j=0; j<count; j++)mpz_nextprime(i, i);
+				out = mpz_get_ui(i);
+
+
+
+
+				mpz_clear(i);
+		};
+
+	}
+
+
+
+
+
+
+
+	mpz_clear(i);
+
+
+	return 0;
+
+
+
+}
+
+
+
+int main(int argc, char *argv[]){
+
+	MPI_Init(&argc, &argv);
+
+	int processes, rank;
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &processes);
+    MPI_Status status;
+	
+
+
+	setup(atoll(argv[1]), rank, processes);
+
+	MPI_Finalize();
+	return 0;
+
+}
